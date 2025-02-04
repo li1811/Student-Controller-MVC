@@ -1,4 +1,7 @@
 using System;
+using System.IO;
+// Step one add json namespace
+using System.Text.Json;
 using System.Collections.Generic;
 
 namespace StudentManagement;
@@ -8,13 +11,27 @@ public class StudentController
     private List<Student> students = new List<Student>();
     private StudentView view = new StudentView();
     private int nextId = 1;
+    // Step 2: we add file path
+    private string filePath = "students.json";
 
+    // Step 3 we add constructor
+    public StudentController()
+    {
+        LoadFromFile(); // for file handling
+    }
     public void AddStudent ()
     {
         Console.WriteLine("\nEnter student name: ");
         string name = Console.ReadLine() ?? "Name not given";
         Console.Write("Enter age: ");
-        int age = int.Parse(Console.ReadLine()?? "0");
+        bool ageCheck = false;
+        int age = 0;
+        while(!ageCheck)
+        {
+            Console.WriteLine("Invalid input, please try again");
+            ageCheck = int.TryParse(Console.ReadLine()?? "0", out age);
+
+        }
         Console.Write("Enter email: ");
         string email = Console.ReadLine() ?? "Email not given";
 
@@ -26,6 +43,7 @@ public class StudentController
         });
 
         Console.WriteLine("Student added successfully.");
+        SaveToFile();
     }
 
     public void ListStudents()
@@ -58,9 +76,17 @@ public class StudentController
             Console.Write("Enter new name: ");
             existingStudent.Name = Console.ReadLine() ?? existingStudent.Name;
             Console.Write("Enter new age: ");
-            existingStudent.Age = int.Parse(Console.ReadLine() ?? existingStudent.Age.ToString());
+            bool ageCheck = false;
+            int age = 0;
+            while(!ageCheck)
+        {
+            Console.WriteLine("Invalid input, please try again");
+            ageCheck = int.TryParse(Console.ReadLine()?? "0", out age);
+
+        }
             Console.Write("Enter new email: ");
             existingStudent.Email = Console.ReadLine() ?? existingStudent.Email;
+            SaveToFile();
             Console.WriteLine("Student information updated successfully");
         }
         else 
@@ -79,6 +105,7 @@ public class StudentController
             if (existingStudent != null)
             {
                 students.Remove(existingStudent);
+                SaveToFile();
                 Console.WriteLine("Student deleted successfully!");
             }
             else
@@ -87,5 +114,22 @@ public class StudentController
             }
     }
 
+    private void SaveToFile()
+    {
+        string jsonData = JsonSerializer.Serialize(students, new JsonSerializerOptions { WriteIndented = true});
+        File.WriteAllText(filePath, jsonData);
+    }
+
+    private void LoadFromFile()
+    {
+        string jsonData = File.ReadAllText(filePath);
+        students = JsonSerializer.Deserialize<List<Student>>(jsonData) ?? new List<Student>();
+
+        // Ensure nextId is correct 
+        if ( students.Count > 0)
+        {
+            nextId = students.Max(s => s.Id) + 1;
+        }
+    }
 
 }
